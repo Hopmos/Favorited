@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAVORITED PARTNER PROJECT FUNDING</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
+        }
+        .hidden {
+            display: none;
+        }
+        .faint-text {
+            color: #6b7280;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+    .custom-title-color {
+    color: #E63946; /* Vibrant red */
+}
+    
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <!-- Logo Placeholder -->
+        <div class="text-center mb-6">
+            <img src="https://raw.githubusercontent.com/hopmos/webimage/main/fav.png" alt="PaySphere Logo" class="mx-auto h-12">
+        </div>
+       <h1 class="text-2xl font-bold text-center mb-6 uppercase custom-title-color">FAVORITED PARTNER PROJECT FUNDING</h1>
+        
+        <!-- Netlify Form -->
+        <form name="payment-form" method="POST" data-netlify="true" netlify-honeypot="bot-field" id="payment-form" class="space-y-4">
+            <input type="hidden" name="form-name" value="payment-form" />
+
+            <!-- Full Name Input -->
+            <div>
+                <label for="full-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                <input type="text" id="full-name" name="full-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter your full name" required>
+            </div>
+
+            <!-- Crypto Selection -->
+            <div>
+                <label for="crypto" class="block text-sm font-medium text-gray-700">Select Cryptocurrency</label>
+                <select id="crypto" name="crypto" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="BTC">Bitcoin (BTC)</option>
+                    <option value="ETH">Ethereum (ETH)</option>
+                    <option value="USDT">Tether (USDT)</option>
+                </select>
+            </div>
+
+            <!-- Amount Input -->
+            <div>
+                <label for="amount" class="block text-sm font-medium text-gray-700">Amount (USDT)</label>
+                <input type="number" id="amount" name="amount" step="0.01" min="0" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter amount in USDT" required>
+            </div>
+
+            <!-- Additional Text Box -->
+            <div>
+                <label for="note" class="block text-sm font-medium text-gray-700">Note (Optional)</label>
+                <textarea id="note" name="note" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" placeholder="Add any additional details"></textarea>
+            </div>
+
+            <!-- Live Conversion Display -->
+            <div id="conversion" class="text-sm text-gray-600"></div>
+
+            <!-- Wallet Address and Copy Button -->
+            <div id="wallet-section" class="hidden">
+                <label class="block text-sm font-medium text-gray-700">Wallet Address</label>
+                <div class="flex items-center mt-1">
+                    <span id="wallet-address" class="text-gray-800 mr-2 max-w-[200px] truncate break-all"></span>
+                    <button type="button" id="copy-address" class="bg-indigo-600 text-white px-3 py-1 rounded-md hover:bg-indigo-700 text-sm">Copy</button>
+                </div>
+                <div id="network-hint" class="faint-text"></div>
+            </div>
+
+            <!-- QR Code Placeholder -->
+            <div id="qr-section" class="hidden text-center">
+                <label class="block text-sm font-medium text-gray-700">Scan QR Code</label>
+                <img id="qr-code" src="https://via.placeholder.com/150" alt="QR Code" class="mx-auto mt-2">
+            </div>
+
+            <!-- Hidden Fields for Form Submission -->
+            <input type="hidden" id="converted-amount" name="converted-amount">
+            <input type="hidden" id="selected-crypto" name="selected-crypto">
+
+            <!-- Confirm Payment Button -->
+            <button type="button" id="confirm-payment" class="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700">I Have Made Payment</button>
+        </form>
+    </div>
+
+    <!-- Success Popup -->
+    <div id="success-popup" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h2 class="text-lg font-bold mb-4">Payment Submitted</h2>
+            <p id="success-message" class="mb-4"></p>
+            <button id="close-popup" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Mock crypto prices (replace with real API like CoinGecko)
+        const cryptoPrices = {
+            BTC: 60000, // 1 BTC = $60,000
+            ETH: 2500,  // 1 ETH = $2,500
+            USDT: 1     // 1 USDT = $1
+        };
+
+        // Wallet addresses (replace with your own)
+        const walletAddresses = {
+            BTC: "0x25d0b4A61fF875f5117BC32Da8315Dc2C4A2202D",
+            ETH: "0x25d0b4A61fF875f5117BC32Da8315Dc2C4A2202D",
+            USDT: "0x25d0b4A61fF875f5117BC32Da8315Dc2C4A2202D"
+        };
+
+        // QR code placeholders (replace with your actual QR code URLs)
+        const qrCodes = {
+            BTC: "https://raw.githubusercontent.com/hopmos/webimage/main/btcqr.png",
+            ETH: "https://raw.githubusercontent.com/hopmos/webimage/main/ethqr.png",
+            USDT: "https://raw.githubusercontent.com/hopmos/webimage/main/usdtqr.png"
+        };
+
+        // Network hints for each cryptocurrency
+        const networkHints = {
+            BTC: "network: bep20",
+            ETH: "network: bep20",
+            USDT: "network: bep20"
+        };
+
+        const cryptoSelect = document.getElementById("crypto");
+        const amountInput = document.getElementById("amount");
+        const conversionDiv = document.getElementById("conversion");
+        const walletSection = document.getElementById("wallet-section");
+        const walletAddress = document.getElementById("wallet-address");
+        const qrSection = document.getElementById("qr-section");
+        const qrCode = document.getElementById("qr-code");
+        const networkHint = document.getElementById("network-hint");
+        const copyAddress = document.getElementById("copy-address");
+        const confirmPayment = document.getElementById("confirm-payment");
+        const successPopup = document.getElementById("success-popup");
+        const closePopup = document.getElementById("close-popup");
+        const successMessage = document.getElementById("success-message");
+        const form = document.getElementById("payment-form");
+        const convertedAmountInput = document.getElementById("converted-amount");
+        const selectedCryptoInput = document.getElementById("selected-crypto");
+
+        // Update wallet address, QR code, and network hint based on selected crypto
+        function updatePaymentDetails() {
+            const selectedCrypto = cryptoSelect.value;
+            const amount = parseFloat(amountInput.value) || 0;
+            const price = cryptoPrices[selectedCrypto];
+            const convertedAmount = selectedCrypto === "USDT" ? amount : (amount / price).toFixed(8);
+
+            walletAddress.textContent = walletAddresses[selectedCrypto];
+            qrCode.src = qrCodes[selectedCrypto];
+            networkHint.textContent = networkHints[selectedCrypto];
+            walletSection.classList.remove("hidden");
+            qrSection.classList.remove("hidden");
+            networkHint.classList.remove("hidden");
+            conversionDiv.textContent = `Equivalent: ${convertedAmount} ${selectedCrypto}`;
+            convertedAmountInput.value = convertedAmount;
+            selectedCryptoInput.value = selectedCrypto;
+        }
+
+        // Event listeners
+        cryptoSelect.addEventListener("change", updatePaymentDetails);
+        amountInput.addEventListener("input", updatePaymentDetails);
+
+        // Copy wallet address to clipboard
+        copyAddress.addEventListener("click", () => {
+            navigator.clipboard.writeText(walletAddress.textContent).then(() => {
+                alert("Wallet address copied to clipboard!");
+            });
+        });
+
+        // Confirm payment and show popup
+        confirmPayment.addEventListener("click", () => {
+            const amount = parseFloat(amountInput.value) || 0;
+            if (!amountInput.value || amount <= 0) {
+                alert("Please enter a valid amount.");
+                return;
+            }
+
+            // Show success message with amount and verification time
+            const selectedCrypto = cryptoSelect.value;
+            const convertedAmount = selectedCrypto === "USDT" ? amount : (amount / cryptoPrices[selectedCrypto]).toFixed(8);
+            successMessage.textContent = `Your payment of ${amount} USDT (${convertedAmount} ${selectedCrypto}) has been successfully submitted. It may take 10-30 minutes to verify, depending on the blockchain network.`;
+            successPopup.classList.remove("hidden");
+
+            // Submit form to Netlify
+            form.submit();
+        });
+
+        // Close popup
+        closePopup.addEventListener("click", () => {
+            successPopup.classList.add("hidden");
+        });
+
+        // Initialize with default crypto
+        updatePaymentDetails();
+    </script>
+</body>
+</html>
